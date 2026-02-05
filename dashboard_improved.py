@@ -7,7 +7,7 @@ from math import ceil
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="H2 Intelligence Hub",
+    page_title="Hydrogen Business Database",
     layout="wide",
     page_icon="⚡",
     initial_sidebar_state="expanded"
@@ -459,8 +459,8 @@ with st.sidebar:
     st.markdown("""
         <div style="text-align: center; padding: 1.5rem 0;">
             <div style="font-size: 3rem; margin-bottom: 0.5rem;">⚡</div>
-            <h2 style="margin: 0; font-size: 1.5rem; color: #14b8a6;">H2 Intelligence</h2>
-            <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.3rem;">Hydrogen Market Database</p>
+            <h2 style="margin: 0; font-size: 1.5rem; color: #14b8a6;">H2 Database</h2>
+            <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.3rem;">Hydrogen Business Directory</p>
         </div>
     """, unsafe_allow_html=True)
     
@@ -550,7 +550,7 @@ elif sort_option == "Country (A-Z)":
 # Hero Section
 st.markdown("""
     <div style="text-align: center; padding: 2rem 0 1rem 0;">
-        <h1 class="hero-title">⚡ Hydrogen Market Intelligence</h1>
+        <h1 class="hero-title">⚡ Hydrogen Business Database</h1>
         <p class="hero-subtitle">Explore the global hydrogen economy with comprehensive company data</p>
     </div>
 """, unsafe_allow_html=True)
@@ -798,7 +798,7 @@ with tab2:
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 2rem 0; color: #64748b;">
-    <p style="margin-bottom: 0.5rem;">⚡ <strong>H2 Intelligence Hub</strong> — Hydrogen Market Database</p>
+    <p style="margin-bottom: 0.5rem;">⚡ <strong>Hydrogen Business Database</strong></p>
     <p style="font-size: 0.85rem;">Built with Streamlit • Data-driven insights for the hydrogen economy</p>
 </div>
 """, unsafe_allow_html=True)
