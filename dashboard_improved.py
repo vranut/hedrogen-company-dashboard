@@ -5,6 +5,54 @@ import plotly.graph_objects as go
 import os
 from math import ceil
 
+# --- Sector Mapping ---
+SECTOR_MAPPING = {
+    "Hydrogen Production Equipment Manaufacturers and its apparatus": "H2 Equipment & Manufacturing",
+    "Hydrogen Storage tank and other forms of Pressure Vessels": "H2 Equipment & Manufacturing",
+    "Hydrogen Storage & Transport": "H2 Equipment & Manufacturing",
+    "EPC and/or Engineering Services and Consulting Firms": "EPC & Engineering",
+    "Hydrogen Project Owners/Showcase/Reference/Business Portfolio": "Project Developers",
+    "H2 Business developer &  Investor": "Project Developers",
+    "Renewable Energy Companies": "Renewable Energy",
+    "Energy Conservation Technology": "Renewable Energy",
+    "Offtaker or Terminal Ports or Maritime Logistic  or Refuelling Station": "Logistics & Transport",
+    "Offtaker or Terminal Ports or Maritime Logistic  or Refuelling Station ": "Logistics & Transport",
+    "Energy Carrier/Transporter/Shipping/Developer/Exploration": "Logistics & Transport",
+    "Refueling Station, Hydrogen": "Logistics & Transport",
+    "Government Agency/Representative/Policy Maker": "Government & Policy",
+    "Academic or Research Institution": "Research & Academia",
+    "Conference Organizer/ Event Advertiser/Journalism/": "Media & Events",
+    "Energy Trading Organization and/or Finance Institution": "Finance & Investment",
+    "Green Field of Energy/ Start-up/Innovative Technology/AI Technology ": "Startups & Innovation",
+    "Green Field of Energy/ Start-up/Innovative Technology/AI Technology": "Startups & Innovation",
+    "H2 Community/ Professional Association": "Association & Community",
+    "-": "Other",
+}
+
+SECTOR_ICONS = {
+    "H2 Equipment & Manufacturing": "🏭",
+    "EPC & Engineering": "🔧",
+    "Project Developers": "📊",
+    "Renewable Energy": "🌱",
+    "Logistics & Transport": "🚢",
+    "Government & Policy": "🏛️",
+    "Research & Academia": "🔬",
+    "Media & Events": "📰",
+    "Finance & Investment": "💰",
+    "Startups & Innovation": "🚀",
+    "Association & Community": "🤝",
+    "Other": "📁",
+}
+
+def map_sector(original_sector):
+    if original_sector is None:
+        return "Other"
+    sector_clean = str(original_sector).strip()
+    return SECTOR_MAPPING.get(sector_clean, SECTOR_MAPPING.get(original_sector, "Other"))
+
+def get_sector_icon(sector):
+    return SECTOR_ICONS.get(sector, "📁")
+
 # --- Page Configuration ---
 st.set_page_config(
     page_title="Hydrogen Business Database",
@@ -417,6 +465,8 @@ def load_data():
     df = pd.read_csv(DATA_FILE).fillna("-")
     if COL_BUSINESS in df.columns:
         df[COL_BUSINESS] = df[COL_BUSINESS].astype(str).str.strip()
+        # Add mapped sector column
+        df['Sector'] = df[COL_BUSINESS].apply(map_sector)
     if COL_COMPANY in df.columns:
         df[COL_COMPANY] = df[COL_COMPANY].astype(str).str.strip()
     return df
@@ -476,17 +526,19 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Business Filter
+    # Business Filter - ใช้ Sector ใหม่
     st.markdown("##### 🏭 Business Sector")
-    biz_options = sorted([x for x in df[COL_BUSINESS].unique() if x != "-" and x != "nan" and len(str(x)) > 2])
+    sector_options = sorted([x for x in df['Sector'].unique() if x != "Other"])
+    sector_options.append("Other")  # เพิ่ม Other ไว้ท้าย
+    
     all_biz = st.checkbox("Select All Sectors", value=True, key="all_biz")
     
     if all_biz:
-        selected_biz = biz_options
+        selected_sectors = sector_options
     else:
-        selected_biz = st.multiselect(
+        selected_sectors = st.multiselect(
             "Choose sectors",
-            biz_options,
+            sector_options,
             default=[],
             label_visibility="collapsed"
         )
@@ -527,7 +579,7 @@ with st.sidebar:
 
 # --- Filter Data ---
 filtered_df = df[
-    (df[COL_BUSINESS].isin(selected_biz)) &
+    (df['Sector'].isin(selected_sectors)) &
     (df[COL_COUNTRY].isin(selected_country))
 ]
 
@@ -575,7 +627,7 @@ with col2:
 with col3:
     st.metric(
         label="Business Sectors",
-        value=f"{len(biz_options)}",
+        value=f"{len(sector_options)}",
         delta="Categories"
     )
 
@@ -598,37 +650,20 @@ with tab1:
     with col_chart1:
         st.markdown("### 🏭 Business Sectors")
         if not filtered_df.empty:
-            biz_counts = filtered_df[COL_BUSINESS].value_counts().head(10).reset_index()
-            biz_counts.columns = ['Sector', 'Count']
+            # ใช้ Sector ใหม่ที่ map แล้ว
+            sector_counts = filtered_df['Sector'].value_counts().reset_index()
+            sector_counts.columns = ['Sector', 'Count']
             
-            # สร้างชื่อย่อที่อ่านง่าย
-            short_names = {
-                'Hydrogen Production Equipment Manaufacturers and its apparatus': 'H2 Equipment Mfg',
-                'Hydrogen Production Equipment Manufacturers and its apparatus': 'H2 Equipment Mfg',
-                'Conference Organizer/ Event Advertiser/Journalism/': 'Events & Media',
-                'EPC and/or Engineering Services and Consulting Firms': 'EPC & Engineering',
-                'Green Field of Energy/ Start-up/Innovative Technology/AI Technology': 'Green Tech & Startups',
-                'Hydrogen Project Owners/Showcase/Reference/Business Portfolio': 'H2 Project Owners',
-                'Renewable Energy Companies': 'Renewable Energy',
-                'Government Agency/Representative/Policy Maker': 'Government',
-                'Hydrogen Storage tank and other forms of Pressure Vessels': 'H2 Storage',
-                'H2 Community/ Professional Association': 'H2 Associations',
-                'H2 Business developer &  Investor': 'H2 Investors',
-                'Academic or Research Institution': 'Research & Academia',
-                'Offtaker or Terminal Ports or Maritime Logistic  or Refuelling Station': 'Maritime & Logistics',
-                'Fuel Cell & Electric Vehicle': 'Fuel Cell & EV',
-                'Energy Conservation Technology/ Energy Efficiency': 'Energy Efficiency',
-            }
-            
-            biz_counts['Short'] = biz_counts['Sector'].apply(
-                lambda x: short_names.get(x, x[:20] + '...' if len(str(x)) > 20 else x)
+            # เพิ่ม icon
+            sector_counts['Label'] = sector_counts['Sector'].apply(
+                lambda x: f"{get_sector_icon(x)} {x}"
             )
             
-            # ใช้ Horizontal Bar Chart แทน Pie Chart
+            # ใช้ Horizontal Bar Chart
             fig_biz = px.bar(
-                biz_counts,
+                sector_counts,
                 x='Count',
-                y='Short',
+                y='Label',
                 orientation='h',
                 text='Count',
                 color='Count',
@@ -745,7 +780,7 @@ with tab2:
         for idx, (_, row) in enumerate(page_df.iterrows()):
             comp_name = str(row.get(COL_COMPANY, 'Unknown')).strip()
             website = row.get(COL_WEBSITE, '#')
-            biz_type = row.get(COL_BUSINESS, '-')
+            sector = row.get('Sector', 'Other')
             country = row.get(COL_COUNTRY, '-')
             intro = row.get(COL_INTRO, '-')
             contact = row.get(COL_CONTACT_TXT, '-')
@@ -772,7 +807,7 @@ with tab2:
                     st.markdown(f"### {comp_name}")
                     st.markdown(f"""
                         <span class="company-tag tag-country">{get_country_emoji(country)} {country}</span>
-                        <span class="company-tag tag-business">{shorten_text(biz_type, 40)}</span>
+                        <span class="company-tag tag-business">{get_sector_icon(sector)} {sector}</span>
                     """, unsafe_allow_html=True)
                     st.write(intro if intro != "-" else "No description available")
                 
